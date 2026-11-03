@@ -1,0 +1,1480 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Build Howl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a fixed step list on the left, one lesson step at a time on the right. Skills are paired form + live SKILL.md preview. */
+:root {
+  --bg: #f7f4f3;
+  --surface: #ffffff;
+  --surface-2: #f0ebe9;
+  --line: #e2dad7;
+  --text: #1e1716;
+  --muted: #685d5a;
+  --accent: #c11f2e;
+  --accent-soft: #fbe8e9;
+  --on-accent: #ffffff;
+  --code-bg: #1e1716;
+  --code-text: #f2ecea;
+  --fill: #fff1b8;
+  --fill-text: #3a2e00;
+  --ask: #ffd9dc;
+  --ask-text: #7a0f1a;
+  --ok: #1d7a4c;
+  --radius: 10px;
+  --font-display: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141110; --surface: #1c1817; --surface-2: #262120; --line: #362f2d;
+    --text: #f1eae8; --muted: #a99e9a; --accent: #ff5d66; --accent-soft: #3a1c1f; --on-accent: #1b0a0c;
+    --code-bg: #0d0b0a; --code-text: #eee6e4; --fill: #4a3f12; --fill-text: #ffe9a3; --ask: #4d1d21; --ask-text: #ffc2c7; --ok: #5fd39a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141110; --surface: #1c1817; --surface-2: #262120; --line: #362f2d;
+  --text: #f1eae8; --muted: #a99e9a; --accent: #ff5d66; --accent-soft: #3a1c1f; --on-accent: #1b0a0c;
+  --code-bg: #0d0b0a; --code-text: #eee6e4; --fill: #4a3f12; --fill-text: #ffe9a3; --ask: #4d1d21; --ask-text: #ffc2c7; --ok: #5fd39a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.55 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-underline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+code, kbd { font-family: var(--font-mono); font-size: .88em; background: var(--surface-2); padding: .1em .35em; border-radius: 4px; }
+kbd { border: 1px solid var(--line); border-bottom-width: 2px; }
+
+.app { display: grid; grid-template-columns: 290px minmax(0, 1fr); min-height: 100%; }
+
+/* Sidebar */
+.side {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--line); background: var(--surface);
+  padding: 20px 14px 32px;
+}
+.brand { display: flex; align-items: baseline; gap: 10px; padding: 0 8px 4px; }
+.brand b { font: 900 30px/1 var(--font-display); font-stretch: 125%; letter-spacing: -.02em; color: var(--accent); }
+.brand span { font-size: 13px; color: var(--muted); }
+.progress { margin: 14px 8px 18px; }
+.progress-bar { height: 6px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.progress-bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s cubic-bezier(.23,1,.32,1); }
+.progress small { display: block; margin-top: 6px; color: var(--muted); font-size: 12.5px; }
+.nav-group { margin: 18px 0 6px; padding: 0 8px; font-size: 11.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.nav a {
+  display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px;
+  color: var(--text); text-decoration: none; font-size: 14.5px; line-height: 1.3;
+}
+.nav a:hover { background: var(--surface-2); }
+.nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.nav a.is-skill { padding-left: 30px; font-size: 13.5px; }
+.nav .dot { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-size: 11px; color: transparent; }
+.nav a.is-done .dot { background: var(--ok); border-color: var(--ok); color: #fff; }
+.nav .chip { margin-left: auto; font: 500 10.5px/1 var(--font-mono); padding: 3px 6px; border-radius: 5px; background: var(--surface-2); color: var(--muted); }
+.nav a[aria-current="page"] .chip { background: var(--surface); }
+.side-foot { margin-top: 22px; padding: 0 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Main */
+.main { min-width: 0; padding-block: 28px 80px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.mobile-bar { display: none; }
+.step { max-width: 980px; margin: 0 auto; }
+.step:not(.is-active) { display: none; }
+.kicker { font: 600 12.5px/1 var(--font-mono); color: var(--accent); letter-spacing: .02em; margin: 0 0 12px; }
+h1 { font: 850 clamp(30px, 4.4vw, 46px)/1.02 var(--font-display); font-stretch: 118%; letter-spacing: -.025em; margin: 0 0 14px; text-wrap: balance; }
+h2 { font: 800 22px/1.15 var(--font-display); font-stretch: 112%; letter-spacing: -.01em; margin: 34px 0 10px; text-wrap: balance; }
+h3 { font: 700 16.5px/1.3 var(--font-body); margin: 22px 0 6px; }
+.lead { font-size: 19px; line-height: 1.5; color: var(--muted); max-width: 62ch; margin: 0 0 8px; text-wrap: pretty; }
+.prose { max-width: 68ch; }
+.prose p, .prose li { text-wrap: pretty; }
+.prose ul, .prose ol { padding-left: 1.3em; }
+.prose li { margin: 4px 0; }
+
+.meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 6px; }
+.pill { font-size: 13px; padding: 5px 10px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+.pill b { color: var(--text); font-weight: 600; }
+
+.callout { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; margin: 18px 0; max-width: 68ch; }
+.callout > :first-child { margin-top: 0; }
+.callout > :last-child { margin-bottom: 0; }
+.callout.idea { border-left: 4px solid var(--accent); }
+.callout .label { font: 700 11.5px/1 var(--font-body); letter-spacing: .07em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; display: block; }
+
+.do-list { counter-reset: s; list-style: none; padding: 0; margin: 14px 0; max-width: 72ch; display: grid; gap: 10px; }
+.do-list > li { counter-increment: s; position: relative; padding: 14px 16px 14px 56px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.do-list > li::before { content: counter(s); position: absolute; left: 16px; top: 13px; width: 26px; height: 26px; border-radius: 50%; background: var(--text); color: var(--bg); font: 700 13px/26px var(--font-body); text-align: center; }
+.do-list > li > :first-child { margin-top: 0; }
+.do-list > li > :last-child { margin-bottom: 0; }
+.do-list p { margin: 4px 0; }
+
+.check-list { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 8px; max-width: 72ch; }
+.check-list label { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }
+.check-list input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+.check-list small { display: block; color: var(--muted); margin-top: 2px; }
+
+.loop { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0; }
+.loop span { font: 700 15px/1 var(--font-display); font-stretch: 112%; padding: 10px 14px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); }
+.loop span:last-child { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.loop i { font-style: normal; color: var(--muted); }
+
+.tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 14px 0; max-width: 760px; }
+.tier { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
+.tier small { color: var(--muted); display: block; font-size: 12.5px; }
+.tier code { display: inline-block; margin-top: 8px; }
+
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+.table-wrap { overflow-x: auto; max-width: 100%; margin: 14px 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); }
+tr:last-child td { border-bottom: 0; }
+
+.go-skill { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 16px 18px; border-radius: var(--radius); background: var(--accent-soft); margin: 18px 0; max-width: 72ch; }
+.go-skill p { margin: 0; }
+
+/* Skill card */
+.skill { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 18px; margin-top: 18px; align-items: start; }
+.skill-form, .skill-out { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; min-width: 0; }
+.skill-out { position: sticky; top: 16px; padding: 0; overflow: hidden; }
+.skill-form h3 { margin-top: 0; }
+.field { display: grid; gap: 6px; margin: 14px 0; }
+.field > span { font-weight: 600; font-size: 14.5px; }
+.field small { color: var(--muted); font-size: 13px; line-height: 1.4; }
+input[type="text"], textarea, select {
+  width: 100%; font: inherit; font-size: 15px; color: var(--text); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px;
+}
+textarea { min-height: 96px; resize: vertical; line-height: 1.45; }
+.row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.color-row { display: flex; gap: 8px; align-items: center; }
+.color-row input[type="color"] { width: 46px; height: 42px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); flex: none; }
+.out-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; background: var(--code-bg); color: var(--code-text); border-bottom: 1px solid rgba(255,255,255,.08); flex-wrap: wrap; }
+.out-head span { font: 500 12.5px/1 var(--font-mono); opacity: .8; }
+.status { font: 600 12px/1 var(--font-body); padding: 5px 8px; border-radius: 6px; background: var(--ask); color: var(--ask-text); }
+.status.ready { background: var(--ok); color: #fff; }
+pre.preview {
+  margin: 0; padding: 16px; max-height: 520px; overflow: auto; background: var(--code-bg); color: var(--code-text);
+  font: 13px/1.6 var(--font-mono); white-space: pre-wrap; word-break: break-word;
+}
+pre.preview mark { border-radius: 3px; padding: 0 2px; }
+pre.preview mark.fill { background: var(--fill); color: var(--fill-text); }
+pre.preview mark.ask { background: var(--ask); color: var(--ask-text); }
+.copy-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 14px; background: var(--surface); border-top: 1px solid var(--line); }
+
+.btn {
+  font: 600 14.5px/1 var(--font-body); padding: 11px 15px; min-height: 42px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--text); text-decoration: none;
+  display: inline-flex; align-items: center; gap: 8px; transition: transform .16s cubic-bezier(.23,1,.32,1), background-color .16s;
+}
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.btn.small { min-height: 34px; padding: 8px 11px; font-size: 13px; }
+@media (hover: hover) and (pointer: fine) { .btn:hover { background: var(--surface-2); } .btn.primary:hover { background: var(--accent); filter: brightness(1.06); } }
+
+.anatomy { display: grid; gap: 10px; margin: 16px 0; max-width: 760px; }
+.anatomy div { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; align-items: start; }
+.anatomy pre { margin: 0; font: 12.5px/1.55 var(--font-mono); white-space: pre-wrap; word-break: break-word; color: var(--text); }
+.anatomy p { margin: 0; font-size: 14.5px; color: var(--muted); }
+
+.step-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--line); }
+.step-foot .spacer { flex: 1; }
+.done-btn[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 12px); opacity: 0; pointer-events: none; background: var(--text); color: var(--bg); padding: 11px 16px; border-radius: 8px; font-weight: 600; font-size: 14.5px; transition: opacity .2s, transform .2s cubic-bezier(.23,1,.32,1); z-index: 50; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .side { position: fixed; inset: 0 auto 0 0; width: min(320px, 86vw); z-index: 40; transform: translateX(-105%); transition: transform .25s cubic-bezier(.32,.72,0,1); box-shadow: 0 0 0 1px var(--line), 0 20px 50px rgba(0,0,0,.25); padding-top: calc(20px + env(safe-area-inset-top, 0px)); }
+  .side.open { transform: none; }
+  .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 30; }
+  .mobile-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); padding: 10px 0; margin: -28px 0 18px; border-bottom: 1px solid var(--line); }
+  .mobile-bar b { font: 900 22px/1 var(--font-display); font-stretch: 125%; color: var(--accent); }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 25; background: var(--bg); }
+  .skill { grid-template-columns: minmax(0, 1fr); }
+  .skill-out { position: static; }
+  .tiers { grid-template-columns: minmax(0, 1fr); }
+  .anatomy div { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) { .row3, .row2 { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
+</style>
+</head>
+<body>
+<style>
+pre.preview .hdr { color: #ffb3b8; }
+pre.preview .sep { color: #8f8582; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+.chip-link { display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); text-decoration: none; color: var(--text); font: 500 13.5px/1 var(--font-mono); }
+.chip-link .tick { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-size: 10px; color: transparent; font-family: var(--font-body); }
+.chip-link.is-done .tick { background: var(--ok); border-color: var(--ok); color: #fff; }
+.legend { font-size: 13.5px; color: var(--muted); margin: 0 0 4px; line-height: 1.5; }
+.legend mark, pre.preview mark.ex { border-radius: 3px; padding: 0 2px; }
+.legend mark.ex { background: var(--surface-2); color: var(--text); text-decoration: underline dotted; }
+.legend mark.fill { background: var(--fill); color: var(--fill-text); }
+pre.preview mark.ex { background: rgba(255,255,255,.1); color: inherit; text-decoration: underline dotted rgba(255,255,255,.5); text-underline-offset: 3px; }
+.field > label > span { font-weight: 600; font-size: 14.5px; }
+.card-title { font: 800 18px/1.2 var(--font-display); font-stretch: 112%; margin: 30px 0 4px; }
+.card-note { color: var(--muted); margin: 0; max-width: 68ch; }
+.out-head .kind { font: 700 11px/1 var(--font-body); letter-spacing: .06em; text-transform: uppercase; padding: 4px 7px; border-radius: 5px; background: rgba(255,255,255,.12); margin-right: 8px; opacity: 1; }
+.skill-form .empty-note { color: var(--muted); font-size: 14.5px; margin: 0; }
+.src { color: var(--muted); font-size: 13.5px; margin-top: 14px; }
+</style>
+<div class="app">
+  <aside class="side" id="side" aria-label="Lesson steps">
+    <div class="brand"><b>Howl</b><span>Build an app with AI</span></div>
+    <div class="progress"><div class="progress-bar"><i id="progressFill"></i></div><small id="progressText"></small></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-foot">
+      <button class="btn small" id="themeBtn" type="button">Dark mode</button>
+      <button class="btn small" id="resetBtn" type="button">Clear my answers</button>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="mobile-bar"><b>Howl</b><button class="btn small" id="menuBtn" type="button" aria-controls="side" aria-expanded="false">All steps</button></div>
+
+    <!-- ================= START ================= -->
+    <section class="step" id="welcome" data-group="Start" data-label="Welcome">
+      <p class="kicker">Start here · 2 hours</p>
+      <h1>Build Howl with AI, then put it live.</h1>
+      <p class="lead">You'll design and build a real social app for NC State with an AI agent, connect it to a real database and share it with a link. You won't type a single terminal command or set up a single account by yourself. Copilot walks you through everything, and you just copy and paste.</p>
+      <div class="meta-row">
+        <span class="pill"><b>Agent</b> GitHub Copilot (Agent mode)</span>
+        <span class="pill"><b>Code</b> GitHub</span>
+        <span class="pill"><b>Hosting</b> Vercel</span>
+        <span class="pill"><b>Database</b> Supabase</span>
+      </div>
+      <h2>Two kinds of things you'll copy</h2>
+      <div class="tiers" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+        <div class="tier"><strong>Skills</strong><small>Reusable know-how for <em>any</em> project, like "how to get spacing right." You install a skill once, and your agent uses it whenever it applies. They live in the <a href="#skill-design-system-builder">Skill library</a>.</small></div>
+        <div class="tier"><strong>Prompts</strong><small>Instructions for <em>this</em> project, like "build Howl's feed." Each one has fields you fill in. Prompts tell the agent which skills to use.</small></div>
+      </div>
+      <h2>How to use this page</h2>
+      <div class="prose"><ol>
+        <li>Go through the steps in order. The list on the left shows where you are.</li>
+        <li>Every prompt and skill comes filled in with an example. <strong>Change any field to make it yours, or copy it as is to follow along.</strong></li>
+        <li>Copy, paste into Copilot Chat, and follow what Copilot tells you. It explains each step and asks you to log in when a website needs it.</li>
+        <li>When a phase needs a skill, install it from the Skill library the same way.</li>
+        <li>Stuck or curious? Use <a href="#ask">Ask your agent anything</a>. It works for any question.</li>
+      </ol></div>
+      <div class="callout"><span class="label">Agenda</span>
+        <div class="table-wrap" style="margin:0;border:0"><table>
+          <tr><th>Time</th><th>What you do</th></tr>
+          <tr><td>Before</td><td>Setup with Copilot: 1 manual step, then 5 prompts (about 30 min)</td></tr>
+          <tr><td>0:00</td><td>The big ideas, and how to ask your agent anything</td></tr>
+          <tr><td>0:08</td><td>Phase 1: Find your taste</td></tr>
+          <tr><td>0:18</td><td>Phase 2: Explore with AI</td></tr>
+          <tr><td>0:28</td><td>Phase 3: Design system</td></tr>
+          <tr><td>0:50</td><td>Phase 4: Layout and polish</td></tr>
+          <tr><td>1:05</td><td>Phase 5: Build the features</td></tr>
+          <tr><td>1:30</td><td>Phase 6: Go live with a real database</td></tr>
+          <tr><td>1:52</td><td>Wrap up: make your own skill</td></tr>
+        </table></div>
+      </div>
+    </section>
+
+    <section class="step" id="open-copilot" data-group="Setup with Copilot" data-label="Open Copilot">
+      <p class="kicker">Setup · the only step you do by hand · 10 min</p>
+      <h1>Open Copilot</h1>
+      <p class="lead">This is the only step without a prompt. Once Copilot is open, it does the rest of the setup with you, one prompt at a time.</p>
+      <ol class="do-list">
+        <li><strong>Install VS Code</strong> from <a href="https://code.visualstudio.com" target="_blank" rel="noopener">code.visualstudio.com</a>, then open it.<p>VS Code is the app where you'll talk to Copilot and see your project's files.</p></li>
+        <li><strong>Open Copilot Chat.</strong><p>Click the Copilot icon at the top of the window, or press <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>I</kbd> (<kbd>⌃</kbd> <kbd>⌘</kbd> <kbd>I</kbd> on a Mac).</p></li>
+        <li><strong>Sign in with GitHub.</strong><p>If you don't have a GitHub account, choose to create one when it asks. Use your NC State email, because that unlocks the free student plan later.</p></li>
+        <li><strong>Switch the chat to Agent mode.</strong><p>Use the dropdown under the chat box. Agent mode lets Copilot create files, run things and use the browser for you.</p></li>
+      </ol>
+      <div class="callout"><span class="label">You're ready when</span>You can type in Copilot Chat and the mode says <strong>Agent</strong>. Every step from here is copy and paste.</div>
+    </section>
+
+    <section class="step" id="setup-browser" data-group="Setup with Copilot" data-label="Turn on the browser skill">
+      <p class="kicker">Setup · prompt 1 of 5</p>
+      <h1>Turn on the browser skill</h1>
+      <p class="lead">This gives Copilot a browser it can use to show you websites, point at what to click and wait for you. Every account you need later gets set up this way.</p>
+      <div class="callout"><span class="label">What happens</span>Copilot turns on its browser tools, or tells you which setting to switch on, and tests them by opening GitHub. When a site needs you to log in, it stops and asks you to do it yourself. It never types your passwords.</div>
+      <div data-prompt="browser"></div>
+    </section>
+
+    <section class="step" id="setup-computer" data-group="Setup with Copilot" data-label="Set up your computer">
+      <p class="kicker">Setup · prompt 2 of 5</p>
+      <h1>Set up your computer</h1>
+      <p class="lead">Apps need a couple of free tools installed before they can run on your laptop. Copilot checks what you already have and installs or walks you through the rest.</p>
+      <div class="callout"><span class="label">What happens</span>Copilot checks for Node.js (which runs your app) and Git (which saves versions of your work). If one is missing, it installs it or opens the download page and tells you what to click.</div>
+      <div data-prompt="computer"></div>
+    </section>
+
+    <section class="step" id="setup-howl" data-group="Setup with Copilot" data-label="Get your copy of Howl">
+      <p class="kicker">Setup · prompt 3 of 5</p>
+      <h1>Get your own copy of Howl</h1>
+      <p class="lead">The Howl starter is a public project on GitHub. Copilot makes your own copy of it, downloads it to your laptop, starts it and saves your first version.</p>
+      <div class="callout"><span class="label">What happens</span>Copilot creates a new repository (a project folder that lives on GitHub) from the starter, opens it in VS Code and runs it. You'll get a <code>localhost</code> link: that's Howl running only on your laptop. It finishes by making your first commit, a save point you can always come back to.</div>
+      <div data-prompt="gethowl"></div>
+    </section>
+
+    <section class="step" id="setup-student" data-group="Setup with Copilot" data-label="Free Copilot Pro">
+      <p class="kicker">Setup · prompt 4 of 5 · do it early</p>
+      <h1>Get Copilot Pro free</h1>
+      <p class="lead">Students get Copilot Pro free through GitHub Education. The free plan has monthly limits you might hit during class, so apply now. Approval can take a few days.</p>
+      <div data-prompt="student"></div>
+    </section>
+
+    <section class="step" id="setup-vibe" data-group="Setup with Copilot" data-label="Add Vibe Annotations">
+      <p class="kicker">Setup · prompt 5 of 5</p>
+      <h1>Add Vibe Annotations</h1>
+      <p class="lead">A Chrome extension that lets you click anything on your app and leave a note, like a Figma comment. Then you hand all your notes to Copilot at once.</p>
+      <div data-prompt="vibe"></div>
+      <div class="callout"><span class="label">You're done with setup when</span>Howl opens at a <code>localhost</code> link, your first commit is saved and Vibe Annotations is in Chrome. You don't need Vercel, Supabase or Figma accounts yet. Copilot helps you create each one when the lesson gets there.</div>
+    </section>
+
+    <section class="step" id="ideas" data-group="Class kickoff" data-label="The big ideas">
+      <p class="kicker">0:00 · 5 min</p>
+      <h1>The big ideas</h1>
+      <p class="lead">You already know the design process. AI just changes how fast each step goes. Every phase follows the same loop:</p>
+      <div class="loop"><span>Brief</span><i>→</i><span>Generate</span><i>→</i><span>Review</span><i>→</i><span>Refine</span><i>→</i><span>Commit</span></div>
+      <ol class="do-list">
+        <li><strong>The agent reads files, not your mind.</strong><p>It only knows what's in your project and your message. Skills and briefs are how you hand it your thinking.</p></li>
+        <li><strong>Skills are know-how; prompts are the job.</strong><p>A skill teaches your agent how to do something well, on every project. A prompt tells it what to do now, on this project.</p></li>
+        <li><strong>Small steps beat big prompts.</strong><p>Ask for one screen or one feature at a time. Big asks give you big messes.</p></li>
+        <li><strong>Your taste is the spec.</strong><p>"Modern and clean" means nothing to an AI. "One loud red on warm gray, chunky headlines" means a lot.</p></li>
+        <li><strong>Commits are undo points.</strong><p>When something breaks, go back to your last commit instead of arguing with the AI.</p></li>
+      </ol>
+      <div class="callout idea"><span class="label">How to plan any project</span>Split it into steps you can check. For each step, decide the <strong>Goal</strong> (what's true when it's done), the <strong>Inputs</strong> (what the agent needs), the <strong>Prompt</strong>, the <strong>Check</strong> (how you'll know it worked) and when to <strong>Commit</strong>. Every phase here follows that pattern.</div>
+    </section>
+
+    <section class="step" id="ask" data-group="Class kickoff" data-label="Ask your agent anything">
+      <p class="kicker">0:05 · 3 min · use it all class</p>
+      <h1>Ask your agent anything</h1>
+      <p class="lead">This is the most useful prompt in the lesson. Ask any question in your own words, however non-technical, and your agent will answer in plain language, do the technical parts itself, and walk you through anything you have to click.</p>
+      <div class="callout idea"><span class="label">Try it now</span>Ask: <em>"What is a commit, and how do I make one?"</em> Then try: <em>"What's the difference between my code on my laptop and my code on GitHub?"</em></div>
+      <div data-prompt="ask"></div>
+      <div class="callout"><span class="label">Why it works</span>You turned on Copilot's browser skill during setup, so it can open websites like GitHub, Vercel, Supabase and Figma, show you where to click and wait for you. The prompt also tells it never to hand you terminal commands.</div>
+    </section>
+
+    <!-- ================= BUILD HOWL ================= -->
+    <section class="step" id="phase-1" data-group="Build Howl" data-label="1 · Find your taste" data-phase>
+      <p class="kicker">Phase 1 · 0:08 · 10 min</p>
+      <h1>Find your taste</h1>
+      <p class="lead">Write down what "good" means for your Howl before anything gets built, so the agent designs toward your taste instead of its defaults.</p>
+      <div class="meta-row"><span class="pill"><b>Goal</b> A taste profile</span><span class="pill"><b>Check</b> docs/taste-profile.md exists and sounds like you</span></div>
+      <h3>Skills for this phase</h3>
+      <div class="chips" data-skills="taste-profile"></div>
+      <ol class="do-list">
+        <li><strong>Install the <code>taste-profile</code> skill</strong> from the link above.</li>
+        <li><strong>Collect 3–5 references.</strong><p>Apps, sites or objects you love the look of. At least one shouldn't be an app: a gig poster, a sneaker, a menu.</p></li>
+        <li><strong>Fill in and paste the prompt below.</strong></li>
+        <li><strong>Read the profile it writes.</strong><p>Rewrite any line that doesn't sound like you, then commit.</p></li>
+      </ol>
+      <div data-prompt="taste"></div>
+      <div class="callout idea"><span class="label">The idea</span>Name what you can <em>see</em>, not how it feels. "Feels fresh" can't be built. "Lots of white space and one bright color" can.</div>
+    </section>
+
+    <section class="step" id="phase-2" data-group="Build Howl" data-label="2 · Explore with AI" data-phase>
+      <p class="kicker">Phase 2 · 0:18 · 10 min</p>
+      <h1>Explore with AI</h1>
+      <p class="lead">AI gives you options faster than you can sketch. The trick is asking for options that differ <em>on purpose</em>, then reviewing them visually.</p>
+      <div class="meta-row"><span class="pill"><b>Goal</b> A chosen look for Howl's post card</span><span class="pill"><b>Check</b> You can say why the winner won</span></div>
+      <h3>Skills for this phase</h3>
+      <div class="chips" data-skills="explore-variants"></div>
+      <ol class="do-list">
+        <li><strong>Install <code>explore-variants</code>.</strong></li>
+        <li><strong>Fill in and paste the explore prompt.</strong> Open the playground page it gives you.</li>
+        <li><strong>Review with Vibe Annotations.</strong><p>Turn on the extension, click anything on the page and leave a note, like "B: the name is too small." Then click <em>Copy</em> in the extension and paste the notes into the feedback prompt.</p></li>
+        <li><strong>Pick a winner, tell the agent why, and commit.</strong></li>
+      </ol>
+      <div data-prompt="explore"></div>
+      <div data-prompt="annotate"></div>
+    </section>
+
+    <section class="step" id="phase-3" data-group="Build Howl" data-label="3 · Design system" data-phase>
+      <p class="kicker">Phase 3 · 0:28 · 22 min</p>
+      <h1>Build your design system</h1>
+      <p class="lead">Turn your taste into tokens: named values for color, type, spacing and shape. Change one token and the whole app changes, in light and dark mode.</p>
+      <div class="meta-row"><span class="pill"><b>Goal</b> Tokens, light and dark mode, base components, Figma variables</span><span class="pill"><b>Check</b> /design-system looks right and passes contrast in both modes</span></div>
+      <div class="tiers">
+        <div class="tier"><strong>1. Primitives</strong><small>Raw values with no meaning yet.</small><code>red-600 = #c11f2e</code></div>
+        <div class="tier"><strong>2. Semantic</strong><small>What a value is for. Dark mode swaps these.</small><code>color-accent → red-600</code></div>
+        <div class="tier"><strong>3. Components</strong><small>Components only use semantic tokens.</small><code>button → color-accent</code></div>
+      </div>
+      <h3>Skills for this phase</h3>
+      <div class="chips" data-skills="design-system-builder color-contrast"></div>
+      <ol class="do-list">
+        <li><strong>Install <code>design-system-builder</code> and <code>color-contrast</code>.</strong></li>
+        <li><strong>Paste the design system prompt.</strong> Open <code>/design-system</code> and switch between light and dark mode.</li>
+        <li><strong>Paste the components prompt.</strong> Every button and input should show all its states.</li>
+        <li><strong>Bring it into Figma</strong> with the Figma prompt. Code stays the source of truth: change a token in code, import again, and Figma updates.</li>
+        <li><strong>Commit.</strong></li>
+      </ol>
+      <div data-prompt="system"></div>
+      <div data-prompt="components"></div>
+      <div data-prompt="figma"></div>
+      <div class="callout"><span class="label">Behind?</span>Paste this into <a href="#ask">Ask your agent anything</a>: "Switch me to the checkpoint/03-design-system branch."</div>
+    </section>
+
+    <section class="step" id="phase-4" data-group="Build Howl" data-label="4 · Layout and polish" data-phase>
+      <p class="kicker">Phase 4 · 0:50 · 15 min</p>
+      <h1>Lay out the app, then remove the slop</h1>
+      <p class="lead">Put your components together into real screens, phone first. Then run three skills that catch what AI tends to get wrong: spacing, wordiness and generic AI-looking design.</p>
+      <div class="meta-row"><span class="pill"><b>Goal</b> A home feed that works on a phone and a laptop</span><span class="pill"><b>Check</b> No sideways scrolling; it doesn't look AI-made</span></div>
+      <h3>Skills for this phase</h3>
+      <div class="chips" data-skills="spacing content-clarity ai-slop-remover"></div>
+      <ol class="do-list">
+        <li><strong>Install the three skills.</strong></li>
+        <li><strong>Paste the layout prompt.</strong> Drag your browser window narrow, then wide.</li>
+        <li><strong>Paste the polish prompt.</strong> Read the list of problems before it fixes them.</li>
+        <li><strong>Review with Vibe Annotations</strong> (the feedback prompt from Phase 2 works here too), then commit.</li>
+      </ol>
+      <div data-prompt="layout"></div>
+      <div data-prompt="polish"></div>
+    </section>
+
+    <section class="step" id="phase-5" data-group="Build Howl" data-label="5 · Build the features" data-phase>
+      <p class="kicker">Phase 5 · 1:05 · 25 min</p>
+      <h1>Build the features</h1>
+      <p class="lead">Now Howl starts working. First set up one place where all data lives, then build one feature at a time, test it and commit before starting the next.</p>
+      <div class="meta-row"><span class="pill"><b>Goal</b> 4 working features</span><span class="pill"><b>Check</b> You can post, howl at a post and filter</span></div>
+      <div class="table-wrap"><table>
+        <tr><th>Feature</th><th>Done when</th></tr>
+        <tr><td>1 · Feed</td><td>Sample posts show up, newest first</td></tr>
+        <tr><td>2 · Compose</td><td>You write a post and it appears at the top</td></tr>
+        <tr><td>3 · Howl</td><td>Tapping Howl adds to the count, and tapping again takes it back</td></tr>
+        <tr><td>4 · Filter</td><td>Choosing a campus spot shows only its posts</td></tr>
+      </table></div>
+      <ol class="do-list">
+        <li><strong>Paste the data prompt once.</strong><p>It gives Howl a single data file. For now it uses sample posts, and in Phase 6 you'll switch it to a real database with one setting.</p></li>
+        <li><strong>For each feature: pick it in the feature prompt, paste, follow the test steps, commit.</strong></li>
+      </ol>
+      <div data-prompt="data"></div>
+      <div data-prompt="feature"></div>
+    </section>
+
+    <section class="step" id="phase-6" data-group="Build Howl" data-label="6 · Go live" data-phase>
+      <p class="kicker">Phase 6 · 1:30 · 22 min</p>
+      <h1>Go live with a real database</h1>
+      <p class="lead">Howl gets two links: a public one where real posts are saved in Supabase and shared by everyone, and a hidden preview that always shows seeded sample data for demos and testing.</p>
+      <div class="table-wrap"><table>
+        <tr><th></th><th>Live link</th><th>Hidden preview link</th></tr>
+        <tr><td>Comes from</td><td>Your <code>main</code> branch</td><td>Your <code>preview</code> branch</td></tr>
+        <tr><td>Data</td><td>Real posts in Supabase</td><td>Seeded sample posts, never real data</td></tr>
+        <tr><td>Who sees it</td><td>Anyone</td><td>Only people you send the long, unguessable link to</td></tr>
+      </table></div>
+      <h3>Skills for this phase</h3>
+      <div class="chips" data-skills="ship-check"></div>
+      <ol class="do-list">
+        <li><strong>Install <code>ship-check</code>.</strong></li>
+        <li><strong>Paste the Vercel prompt.</strong> Copilot helps you create a Vercel account if you need one and publishes Howl. Say "done" after each step.</li>
+        <li><strong>Paste the database prompt.</strong> Copilot connects Supabase through Vercel and moves your posts into it.</li>
+        <li><strong>Paste the preview prompt</strong> to set up the hidden link.</li>
+        <li><strong>Paste the launch prompt.</strong> Open your live link on your phone and post the first real howl.</li>
+      </ol>
+      <div data-prompt="deploy"></div>
+      <div data-prompt="database"></div>
+      <div data-prompt="preview"></div>
+      <div data-prompt="launch"></div>
+      <div class="callout"><span class="label">Good to know</span>Howl has no login yet, so anyone with the live link can post. The database prompt adds basic protection: length limits, and no editing or deleting from the app. Adding accounts is a good "what's next."</div>
+    </section>
+
+    <!-- ================= SKILL LIBRARY ================= -->
+    <section class="step" id="skill-design-system-builder" data-group="Skill library" data-label="design-system-builder" data-skill-page="design-system-builder"></section>
+    <section class="step" id="skill-color-contrast" data-group="Skill library" data-label="color-contrast" data-skill-page="color-contrast"></section>
+    <section class="step" id="skill-spacing" data-group="Skill library" data-label="spacing" data-skill-page="spacing"></section>
+    <section class="step" id="skill-content-clarity" data-group="Skill library" data-label="content-clarity" data-skill-page="content-clarity"></section>
+    <section class="step" id="skill-ai-slop-remover" data-group="Skill library" data-label="ai-slop-remover" data-skill-page="ai-slop-remover"></section>
+    <section class="step" id="skill-taste-profile" data-group="Skill library" data-label="taste-profile" data-skill-page="taste-profile"></section>
+    <section class="step" id="skill-explore-variants" data-group="Skill library" data-label="explore-variants" data-skill-page="explore-variants"></section>
+    <section class="step" id="skill-ship-check" data-group="Skill library" data-label="ship-check" data-skill-page="ship-check"></section>
+
+    <!-- ================= TOOLKIT ================= -->
+    <section class="step" id="own-skill" data-group="Toolkit" data-label="Make your own skill">
+      <p class="kicker">Wrap up · 1:52</p>
+      <h1>Make your own skill</h1>
+      <p class="lead">Every skill in the library has the same simple shape. Learn it, and you can turn anything you know into a skill your agent uses on every project.</p>
+      <h2>Anatomy of a skill</h2>
+      <div class="anatomy">
+        <div><pre>---
+name: spacing
+description: Applies a consistent
+spacing system. Use when building
+layouts or when a screen feels
+cramped or messy.
+---</pre><p><strong>The label.</strong> The <code>description</code> is the most important line: agents read it to decide <em>when</em> to use the skill.</p></div>
+        <div><pre>## My settings
+- Density: comfortable</pre><p><strong>Your preferences.</strong> This is what makes a shared skill yours.</p></div>
+        <div><pre>## Steps
+1. …
+2. …</pre><p><strong>The steps.</strong> Numbered, in order, each one checkable. Write them the way you'd brief a smart new teammate.</p></div>
+        <div><pre>## Rules
+- Measure, don't guess.</pre><p><strong>The guardrails.</strong> What the agent must always or never do.</p></div>
+      </div>
+      <div class="callout"><span class="label">Where skills live</span>One folder per skill, each with a <code>SKILL.md</code> inside: <code>.github/skills/spacing/SKILL.md</code>. Copilot, Claude, Cursor and other agents read this format. A skill only loads when its description matches what you're doing, so you can install lots of them.</div>
+      <h2>Write one</h2>
+      <div data-skill-card="my-skill"></div>
+    </section>
+
+    <section class="step" id="vibe" data-group="Toolkit" data-label="Vibe Annotations">
+      <p class="kicker">Toolkit</p>
+      <h1>Vibe Annotations</h1>
+      <p class="lead">Point at things on your app and say what's wrong, just like commenting in Figma. Then hand all your notes to your agent at once.</p>
+      <ol class="do-list">
+        <li><strong>Install it</strong> from the <a href="https://chromewebstore.google.com/detail/vibe-annotations-visual-f/gkofobaeeepjopdpahbicefmljcmpeof" target="_blank" rel="noopener">Chrome Web Store</a>.</li>
+        <li><strong>Open your app's <code>localhost</code> link in Chrome.</strong> The extension turns itself on for local pages.</li>
+        <li><strong>Click any element and write a note.</strong> Be specific: "Too much space above the name," "This red is too loud here." You can also adjust sizes and colors right in the page.</li>
+        <li><strong>Copy all your notes</strong> from the extension and paste them into the prompt below.</li>
+      </ol>
+      <div data-prompt="annotate"></div>
+      <div class="callout"><span class="label">Going further</span>The extension can also connect straight to some agents, so they read your notes automatically without copy-paste. Ask your agent: "Can you connect to Vibe Annotations?"</div>
+    </section>
+
+    <section class="step" id="tools" data-group="Toolkit" data-label="Using a different tool">
+      <p class="kicker">Toolkit</p>
+      <h1>Using a different tool</h1>
+      <p class="lead">This lesson uses Copilot, GitHub, Vercel and Supabase. The skills and prompts work with other tools too.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Step</th><th>This lesson</th><th>Alternatives</th></tr>
+        <tr><td>AI agent</td><td>GitHub Copilot (Agent mode)</td><td>Claude Code, Cursor, ChatGPT (Codex), Windsurf</td></tr>
+        <tr><td>Where skills live</td><td><code>.github/skills/</code></td><td><code>.claude/skills/</code>. Chat-only tools: paste the skill into the chat.</td></tr>
+        <tr><td>Browser help</td><td>Copilot's Chrome skill</td><td>Claude in Chrome, or any browser tool your agent has. Without one, the agent describes the clicks instead.</td></tr>
+        <tr><td>Code storage</td><td>GitHub</td><td>GitLab, Bitbucket</td></tr>
+        <tr><td>Hosting</td><td>Vercel</td><td>Netlify, Cloudflare Pages</td></tr>
+        <tr><td>Database</td><td>Supabase</td><td>Neon, Firebase, Convex</td></tr>
+      </table></div>
+      <div class="callout">If you use a different tool, tell your agent in the <a href="#ask">Ask anything</a> prompt: "I use Netlify instead of Vercel." It'll adjust the steps.</div>
+    </section>
+
+    <section class="step" id="help" data-group="Toolkit" data-label="When something breaks">
+      <p class="kicker">Toolkit</p>
+      <h1>When something breaks</h1>
+      <p class="lead">It will, and that's normal. For almost anything, paste what you see into <a href="#ask">Ask your agent anything</a>. For the common cases:</p>
+      <div class="table-wrap"><table>
+        <tr><th>What you see</th><th>What to do</th></tr>
+        <tr><td>Copilot changed way more than you asked</td><td>Ask: "Undo everything since my last commit."</td></tr>
+        <tr><td>Copilot can't create or edit files</td><td>Set the chat mode to <strong>Agent</strong>, using the dropdown under the chat box.</td></tr>
+        <tr><td>Blank page or an error</td><td>Ask: "My page shows this: [paste or describe]. Fix it with the smallest change."</td></tr>
+        <tr><td>The localhost link won't load</td><td>Ask: "Start Howl again and give me the link."</td></tr>
+        <tr><td>You're behind</td><td>Ask: "Switch me to the checkpoint branch for phase [number]."</td></tr>
+        <tr><td>The deploy failed, or the live site has no posts</td><td>Ask: "My Vercel deploy failed (or my live site shows no posts). Use the ship-check skill to find out why."</td></tr>
+        <tr><td>Still stuck</td><td>Raise your hand for the helper.</td></tr>
+      </table></div>
+    </section>
+
+    <div class="step-foot" id="stepFoot">
+      <button class="btn" id="prevBtn" type="button">← Back</button>
+      <button class="btn" id="phaseBtn" type="button" hidden>← Back to phase</button>
+      <span class="spacer"></span>
+      <button class="btn done-btn" id="doneBtn" type="button" aria-pressed="false">Mark as done</button>
+      <button class="btn primary" id="nextBtn" type="button">Next →</button>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ===================== SKILLS (reusable on any project) ===================== */
+const SKILLS = {
+'design-system-builder': {
+  lead: 'Builds a design system for any project: tiered tokens, light and dark themes, base components and a tokens file Figma can import.',
+  how: 'The agent starts from raw values (primitives), names them by purpose (semantic tokens) and makes components use only those names. Dark mode swaps the semantic layer only, so every component works in both themes without extra code.',
+  used: 'Phase 3',
+  sources: 'Jakub Krehel (better-colors, better-typography), design-system-patterns, ui-ux-pro-max design-system, Google DESIGN.md',
+  fields: [
+    { k: 'naming', label: 'Token naming style', type: 'select', options: ['by purpose, like color-bg-surface and color-text-muted', 'short, like --surface and --text-muted'] },
+    { k: 'accents', label: 'How many accent colors do you like?', type: 'select', options: ['one', 'one main plus one supporting'] },
+    { k: 'radius', label: 'Your default corner style', type: 'select', options: ['sharp (2–4px)', 'soft (8–12px)', 'round (16–24px, pill buttons)'] }
+  ],
+  tpl: `---
+name: design-system-builder
+description: Builds or extends a design system with tiered tokens (primitive, semantic, component), light and dark themes, base components and a tokens.json Figma can import. Use when starting a project's visual foundation, adding a theme, or when colors, type or spacing are hard-coded in components.
+---
+
+# Design system builder
+
+## My preferences
+- Token naming: {{naming|by purpose, like color-bg-surface and color-text-muted}}
+- Accent colors: {{accents|one}}
+- Default corners: {{radius|soft (8–12px)}}
+
+## Steps
+1. Read the project's taste profile or brief in docs/ if there is one. If the project already has tokens or styles, extend them instead of starting over.
+2. Primitives (raw values, no meaning):
+   - Color: a 12-step scale per hue, made in OKLCH so the steps look even. Steps 1–2 are backgrounds, 3–5 component backgrounds and hover, 6–8 borders, 9–10 solid fills, 11–12 text.
+   - Grays tinted slightly toward the accent hue (pure gray looks unfinished).
+   - A type scale (for example 12, 14, 16, 20, 24, 32, 40). Body text 16px at 1.5 line height. 2–3 weights.
+   - Spacing on a 4px grid. One radius family. Shadows made of soft layers, not one dark blur.
+3. Semantic tokens: name what a value is for, not what it looks like (color-accent, not color-red). Cover the background, surfaces, borders, text (default, muted, on-accent), the accent and status colors (success, warning, danger).
+4. Themes: light is the default. Dark mode redefines only the semantic tokens. Don't just invert: raised surfaces get lighter in dark mode, and the accent may shift to stay readable.
+5. Write the tokens as CSS variables in one file. Also write tokens/tokens.json in the W3C design tokens format with Light and Dark modes, so it can be imported into Figma variables.
+6. Components use semantic tokens only. Never a raw hex value or a one-off pixel value inside a component.
+7. Make a /design-system page that shows every token and every component state in both themes.
+8. If the color-contrast skill is installed, run it and fix what fails.
+
+## Rules
+- Every token must be used somewhere. Delete tokens nobody uses.
+- One accent covering a small part of the screen beats several competing colors.
+- To change how something looks, change the token, not the component.
+- Ask me before inventing a brand color, font or name.
+` },
+
+'color-contrast': {
+  lead: 'Makes sure every screen meets WCAG 2.2 AA contrast, in light and dark mode, with measured numbers rather than guesses.',
+  how: 'The agent lists every text-and-background pair your app actually uses, calculates each contrast ratio and fixes failures at the token level. One fix then corrects every component that uses that color.',
+  used: 'Phase 3, and before every launch',
+  sources: 'Jakub Krehel (better-accessibility, better-colors), ibelick fixing-accessibility, wcag-audit-patterns, Vercel web interface guidelines',
+  fields: [
+    { k: 'level', label: 'Target', type: 'select', options: ['WCAG AA everywhere', 'WCAG AA everywhere, AAA for body text when it is easy'] },
+    { k: 'locked', label: 'Colors that must never change (optional)', help: 'For example a brand color you were given.', type: 'text', ph: '#c11f2e (brand red)' }
+  ],
+  tpl: `---
+name: color-contrast
+description: Checks and fixes color contrast so every screen meets WCAG 2.2 AA in light and dark mode. Use when creating or changing colors, themes or components, and before shipping.
+---
+
+# Color contrast (WCAG AA)
+
+## My settings
+- Target: {{level|WCAG AA everywhere}}
+- Colors that must not change: {{locked|none}}
+
+## The bar
+- Normal text: at least 4.5:1 against its background.
+- Large text (24px and up, or 19px bold and up): at least 3:1.
+- UI parts people need to see (input borders, icons, focus rings, toggle states, chart lines): at least 3:1.
+- Placeholder text counts as text: 4.5:1.
+- Disabled controls don't have to pass, but should still be recognizable.
+- Never use color alone to show meaning. Errors also get an icon or text.
+
+## Steps
+1. List every color pair in use: each text color on each surface it appears on, text on the accent color, text on images, and hover, focus and selected states, in both light and dark mode.
+2. Calculate each ratio. Show a table: pair, ratio, required, pass or fail.
+3. Fix failures at the token level (adjust lightness), not by patching single components. Keep the hue so the brand still feels the same.
+4. If a color that must not change fails, keep it for large or decorative use and add a darker or lighter version for text.
+5. Recheck everything that changed and show the new numbers.
+
+## Rule
+Measure, don't guess. Never report a pass you didn't calculate.
+` },
+
+'spacing': {
+  lead: 'Applies a consistent spacing system so every screen has clear grouping, even rhythm and comfortable tap targets.',
+  how: 'Most messy layouts come from one-off spacing values. The agent snaps every value to a fixed scale and uses proximity (closer means related) to show structure, then checks the result at four screen widths.',
+  used: 'Phase 4, and whenever a screen feels off',
+  sources: 'Jakub Krehel better-layout, ibelick baseline-ui, responsive-design, craft-ui synthesis',
+  fields: [
+    { k: 'unit', label: 'Base unit', type: 'select', options: ['4px', '8px'] },
+    { k: 'density', label: 'Your default density', type: 'select', options: ['compact', 'comfortable', 'airy'] }
+  ],
+  tpl: `---
+name: spacing
+description: Applies and checks a consistent spacing system: a fixed scale, grouping by proximity, consistent padding and comfortable tap targets. Use when building layouts or components, or when a screen feels cramped, uneven or messy.
+---
+
+# Spacing
+
+## My settings
+- Base unit: {{unit|4px}}
+- Density: {{density|comfortable}}
+
+## The system
+- Use only the spacing scale: 4, 8, 12, 16, 24, 32, 48, 64 (multiples of the base unit). No one-off values like 13px or 22px.
+- Proximity: things that belong together sit close. The gap between groups is at least twice the gap inside a group.
+- Same job, same spacing: every card gets the same inner padding, and every list row the same height and gaps.
+- Use gap on flex and grid layouts instead of margins on each item.
+- Phones get at least 16px of padding at the screen edges.
+- Tap targets are at least 44 by 44px on touch screens, with at least 8px between them.
+- Reading text stays around 45–75 characters per line.
+- Nested corners: the inner radius equals the outer radius minus the padding between them.
+
+## Steps
+1. Find every spacing value that isn't on the scale and replace it with the nearest token.
+2. Check grouping: does the spacing show what belongs together? Fix groups that float apart or collide.
+3. Check at 320, 375, 768 and 1280px wide. Nothing overflows or touches the screen edge.
+4. Show what you changed as a short list: where, before, after.
+
+## Rule
+When in doubt, add space between groups, not inside them.
+` },
+
+'content-clarity': {
+  lead: 'Keeps interface text short and clear: no over-labeling, no filler, and buttons that say exactly what they do.',
+  how: 'AI tends to label everything and explain too much, which is itself a sign of AI-made UI. The agent removes text that repeats what is already obvious, tightens what is left and makes empty states and errors actually useful.',
+  used: 'Phase 4, and whenever you add UI text',
+  sources: 'Jakub Krehel better-writing, Vercel writing-guidelines, avoid-ai-writing, craft-ui synthesis',
+  fields: [
+    { k: 'voice', label: 'Your default voice', type: 'select', options: ['friendly and direct', 'short and neutral', 'playful but never cringe'] },
+    { k: 'maxwords', label: 'Longest button label', type: 'select', options: ['2', '3', '4'] },
+    { k: 'banned', label: 'Words you never want to see', help: 'One per line.', type: 'textarea', ph: 'Oops\nAwesome\nLeverage' }
+  ],
+  tpl: `---
+name: content-clarity
+description: Keeps interface text short, clear and useful, with no over-labeling, no filler, buttons that say what they do, and helpful empty states and errors. Use when writing or reviewing UI text, labels, buttons or feature descriptions.
+---
+
+# Content clarity
+
+## My settings
+- Voice: {{voice|friendly and direct}}
+- Longest button label: {{maxwords|3}} words
+- Words I never want to see:
+{{banned:list|- (none yet)}}
+
+## Cut the over-labeling
+- Don't label what's obvious: no "Title:" before a title, no "Name:" before a name, no heading over a section with only one item.
+- No small label above every heading.
+- Helper text only when it says something the label doesn't.
+- Well-known icons (search, close, back) don't need visible text, but they do need an accessible name.
+- One explanation per feature, not a paragraph plus a tooltip plus a badge.
+
+## Make it clear
+- Buttons are a verb plus an object ("Save draft", "Post", "Clear filter"). Never "Submit", "OK" or "Click here".
+- One main action per screen.
+- Errors say what happened and how to fix it. Don't blame the user or apologize at length.
+- Empty states say what's missing and offer the next step as a button.
+- Use sentence case. Use numbers, not vague words ("3 new posts", not "some new posts").
+- Cut marketing words: seamless, powerful, effortless, elevate, unlock.
+
+## Steps
+1. Go through every screen and list text that's redundant, vague or too long, with where it is.
+2. Rewrite or remove each one. Show before and after.
+3. Read each screen top to bottom. If someone couldn't understand it in 5 seconds, cut more.
+` },
+
+'ai-slop-remover': {
+  lead: 'Finds and removes the design clichés that make an interface look AI-generated.',
+  how: 'AI tools reach for the same defaults again and again: purple gradients, glassy glow, identical cards and labels everywhere. The agent checks every screen against a list of these tells, fails any screen with three or more, and replaces each tell with a choice that comes from your own design direction.',
+  used: 'Phase 4, and before every launch',
+  sources: 'Impeccable, taste-skill (anti-slop), Anthropic frontend-design, ibelick baseline-ui, craft-ui ban list',
+  fields: [
+    { k: 'strict', label: 'Strictness', type: 'select', options: ['flag everything, even small things', 'only flag obvious problems'] },
+    { k: 'mine', label: 'Add your own slop tells', help: 'Things you\'ve noticed AI does that you dislike. One per line.', type: 'textarea', ph: 'Sparkle icons on every AI feature\nRandom blobs in the background' }
+  ],
+  tpl: `---
+name: ai-slop-remover
+description: Finds and removes design clichés that make an interface look AI-generated, such as purple gradients, glow, generic layouts, over-labeling and filler copy. Use after generating UI, before shipping, or when something looks like every other AI app.
+---
+
+# AI slop remover
+
+## My settings
+- Strictness: {{strict|flag everything, even small things}}
+- My own slop tells:
+{{mine:list|- (none yet)}}
+
+## Common tells
+Visual:
+- Purple, indigo or blue-to-purple gradients; gradient text
+- Glow, glassy blur or neon shadows used as decoration
+- The same large corner radius and soft shadow on every element
+- Emoji used as icons or section markers
+- Inter or Space Grotesk picked by default, for no reason
+Layout:
+- Grids of identical cards with an icon on top
+- Cards inside cards
+- A hero with three big statistics
+- Everything centered
+- A small uppercase label above every heading
+- 01 / 02 / 03 numbering on things that aren't a sequence
+Motion:
+- Fade-up on every section; hover lift on things you can't click
+Copy:
+- "Seamless", "elevate", "unlock", "effortless", "powerful"
+- Three-word slogans ("Fast. Simple. Beautiful.")
+- Labels and helper text that repeat what's already obvious
+- Made-up numbers, logos or testimonials
+
+## Steps
+1. Go through every screen. List each tell you find, with where it is (file and component).
+2. Three or more tells on one screen means that screen fails.
+3. Fix in this order: delete it, tone it down, replace it with a design-system token, restyle it.
+4. Replace each generic choice with one that comes from the project's own taste profile or subject.
+5. Show a before and after list. Don't change features or what the content means.
+
+## Rule
+If the taste profile asks for one of these on purpose, keep it. Taste beats rules.
+` },
+
+'taste-profile': {
+  lead: 'Turns your references and instincts into a written design direction any project can follow.',
+  how: 'The agent studies your references and names what it can actually see in them, not vague adjectives. It turns your feel-words into concrete decisions and checks the result is specific enough that no other project could use it unchanged.',
+  used: 'Phase 1',
+  sources: 'taste-skill (design-taste-frontend), Impeccable (new work), Anthropic frontend-design, craft-ui direction contract',
+  fields: [
+    { k: 'principles', label: 'Your design principles', help: 'Beliefs you bring to every project. One per line. They\'re added to every profile.', type: 'textarea', ph: 'Type does the heavy lifting\nOne bold move per screen' },
+    { k: 'path', label: 'Where to save profiles', type: 'select', options: ['docs/taste-profile.md', 'DESIGN.md'] }
+  ],
+  tpl: `---
+name: taste-profile
+description: Turns references and taste into a written design direction for any project. Use at the start of a project, before designing screens, or when asked whether something matches the direction.
+---
+
+# Taste profile
+
+## My design principles
+{{principles:list|- (none yet; add your own over time)}}
+
+## Steps
+1. If I haven't given references, ask for 3–5, including at least one that isn't a website or app.
+2. For each reference, name 2 things you can actually see ("one bright color on warm gray", "very large bold headlines", "dense lists with thin dividers"). Never vague words like clean, modern or sleek.
+3. Turn my feel-words into one decision each for color, typography, shape, density and motion.
+4. Write the profile to {{path|docs/taste-profile.md}}:
+   - One sentence: the design direction
+   - The decisions from step 3
+   - 5 Do's and 5 Don'ts (add my design principles to the Do's)
+5. Genericness check: if another project could use this profile unchanged, make it more specific to this project's subject and audience.
+
+## Rule
+Later skills and prompts read this file. Keep it short enough to read in one minute.
+` },
+
+'explore-variants': {
+  lead: 'Builds a few clearly different versions of one component or screen, so you can compare them and pick.',
+  how: 'Asking for "a few options" usually gets three versions of the same idea. This skill forces the versions to differ in one named way, puts them side by side, then cleans up the losers once you choose.',
+  used: 'Phase 2',
+  sources: 'Emil Kowalski prototype, Jakub Krehel variant, Impeccable critique',
+  fields: [
+    { k: 'count', label: 'How many versions?', type: 'select', options: ['3', '2', '4'] },
+    { k: 'where', label: 'Where to show them', type: 'select', options: ['a temporary /playground page', 'a switcher on the real screen'] }
+  ],
+  tpl: `---
+name: explore-variants
+description: Builds several clearly different versions of one component or screen so I can compare and pick. Use when exploring a design direction or choosing between options.
+---
+
+# Explore variants
+
+## My settings
+- Number of versions: {{count|3}}
+- Where to show them: {{where|a temporary /playground page}}
+
+## Steps
+1. Read the taste profile in docs/ if there is one. Every version must fit it.
+2. If I didn't say which component and which single difference to explore (for example density, contrast, shape or voice), ask me.
+3. Build the versions so they differ mainly in that one way, clearly enough to tell apart in 2 seconds. Label them A, B, C.
+4. Use real content from the project, never placeholder text.
+5. Under each version, write one strength and one weakness.
+6. Stop and ask me which one wins and why.
+7. After I pick: keep only the winner, delete the others and any temporary page, and add my reason to the taste profile under "Decisions".
+
+## Rules
+- Don't touch other screens while exploring.
+- Change one thing at a time, or I can't tell what I prefer.
+` },
+
+'ship-check': {
+  lead: 'Checks that an app is ready to go live and fixes what isn\'t, before real people see it.',
+  how: 'The agent runs the same build the host will run, checks every setting and secret the app needs, and tests what a first-time visitor sees. Problems show up on your laptop instead of on your live link.',
+  used: 'Phase 6, and before every launch',
+  sources: 'Vercel deploy-to-vercel, ibelick fixing-metadata, deploy-checklist patterns',
+  fields: [
+    { k: 'host', label: 'Your usual host', type: 'select', options: ['Vercel', 'Netlify', 'Cloudflare Pages'] },
+    { k: 'extra', label: 'Anything else to always check', help: 'One per line.', type: 'textarea', ph: 'The favicon matches my accent color' }
+  ],
+  tpl: `---
+name: ship-check
+description: Checks an app is ready to go live and fixes what isn't, including the build, environment variables, secrets, metadata, empty and error states, phone layout and dark mode. Use before deploying or when a deploy fails.
+---
+
+# Ship check
+
+## My settings
+- Host: {{host|Vercel}}
+- Also check:
+{{extra:list|- (nothing extra)}}
+
+## Checklist
+1. The production build finishes with no errors.
+2. Every environment variable the app needs exists on the host for each environment (production and preview). Tell me which are missing.
+3. No secret keys in browser code. Only keys meant to be public (like a database's public anon key) may appear there.
+4. It works for a first-time visitor: empty storage, no data, slow network.
+5. If the database or an API is down, the app shows a clear message, not a blank screen.
+6. Page title, description, link preview text and a favicon.
+7. Reloading any page works. Single-page apps may need a rewrite rule on the host.
+8. It works at 375px wide and in dark mode. Run color-contrast if it's installed.
+9. No errors in the browser console.
+
+## Then
+Fix failures one at a time and tell me what each fix was. When everything passes, guide me through deploying with button names, not terminal commands.
+` },
+
+'my-skill': {
+  fields: [
+    { k: 'name', label: 'Name', help: 'Lowercase, with dashes instead of spaces.', type: 'text', ph: 'empty-states' },
+    { k: 'when', label: 'What it does and when to use it', help: 'This becomes the description. Agents read it to decide when to use the skill.', type: 'text', ph: 'Designs helpful empty states. Use whenever a screen or list can be empty.' },
+    { k: 'steps', label: 'Steps', help: 'One per line, in order.', type: 'textarea', ph: 'Say what\'s empty in plain words\nSuggest one next step\nAdd a button for that step' },
+    { k: 'rules', label: 'Rules', help: 'One per line.', type: 'textarea', ph: 'Never blame the user\nKeep it under 12 words' }
+  ],
+  tpl: `---
+name: {{name}}
+description: {{when}}
+---
+
+# {{name}}
+
+## Steps
+{{steps:numbered}}
+
+## Rules
+{{rules:list|- Keep changes small and explain what you changed.}}
+` }
+};
+
+/* ===================== PROMPTS (this project only) ===================== */
+const PROMPTS = {
+ask: {
+  title: 'Ask your agent anything',
+  note: 'Use this whenever you have a question or you\'re stuck. Change the question each time.',
+  fields: [
+    { k: 'question', label: 'Your question, in your own words', type: 'textarea', ph: 'What is a commit, and why should I make one?' },
+    { k: 'where', label: 'Where you are', type: 'select', options: ['Setup', 'Phase 1: taste', 'Phase 2: exploring', 'Phase 3: design system', 'Phase 4: layout', 'Phase 5: features', 'Phase 6: going live', 'Not sure'] },
+    { k: 'style', label: 'What you want', type: 'select', options: ['Explain it, then walk me through it one step at a time', 'Just do it, then tell me what you did', 'Only explain. Don\'t change anything.'] }
+  ],
+  tpl: `I'm a designer building my first app, and I don't use the terminal.
+
+My question: {{question}}
+Where I am: {{where|not sure}}
+What I want: {{style|Explain it, then walk me through it one step at a time}}
+
+How to help me:
+1. Answer in plain language. If you must use a technical word, explain it in a few words.
+2. If something needs to happen in the code or the terminal, do it yourself and tell me what you did.
+3. If I need to click something on a website (GitHub, Vercel, Supabase or Figma), use your Chrome skill to guide me one step at a time. Wait for me to say "done" before the next step.
+4. Use the skills in .github/skills when they apply.
+5. End by telling me how to check that it worked.` },
+
+browser: {
+  title: 'Turn on the browser skill',
+  note: 'Paste into Copilot Chat in Agent mode.',
+  fields: [],
+  tpl: `I'm a designer and I've never used the terminal. You'll be my guide for building and launching an app.
+
+First, set yourself up to use a web browser for me:
+1. Turn on Copilot's browser tools in VS Code. If you can't change the setting yourself, tell me exactly which setting to switch on and where to find it.
+2. If a browser skill for Copilot is available (for example the chrome-devtools skill from github/awesome-copilot), install it for me.
+3. Test it: open https://github.com and tell me what you see.
+
+From now on, whenever a website needs me (to log in, sign up, approve something or click a button), stop, tell me exactly what to do in plain words and wait for me to say "done". Never type my passwords for me. Explain anything technical in one short sentence.` },
+
+computer: {
+  title: 'Set up my computer',
+  note: 'Copilot checks what you have and installs what\'s missing.',
+  fields: [],
+  tpl: `Check that my computer has what it needs to build a web app:
+1. Node.js (the LTS version), which runs the app.
+2. Git, which saves versions of my work.
+
+Check each one yourself. If something is missing, install it if you can. If it needs an installer, open the download page in the browser, tell me which button to click, and wait for me to say "done". Then check again.
+Finish by telling me in two sentences what each tool is for.` },
+
+gethowl: {
+  title: 'Get my copy of Howl',
+  note: 'Creates your own Howl project from the public starter.',
+  fields: [
+    { k: 'repo', label: 'Starter project', type: 'text', ph: 'https://github.com/Quillor/howl-starter' },
+    { k: 'name', label: 'Name for your copy', type: 'text', ph: 'howl' },
+    { k: 'folder', label: 'Where to keep it on your laptop', type: 'text', ph: 'a folder called Projects in my home folder' }
+  ],
+  tpl: `Make me my own copy of the Howl starter project and get it running.
+
+Starter: {{repo}}
+Name for my copy: {{name}}
+Keep it on my laptop in: {{folder}}
+
+1. Create a new public repository on my GitHub account from that template, with the name above. Use the GitHub website in the browser if you need to, and ask me to log in if needed.
+2. Download (clone) it to the folder above and open it in VS Code.
+3. Install what the project needs and start it. Give me the localhost link and tell me what I should see.
+4. Make my first commit with the message "Hello Howl" and sync it to GitHub.
+5. Explain in plain words: what a repository is, what localhost means, and what a commit is (one sentence each).` },
+
+student: {
+  title: 'Get Copilot Pro free',
+  note: 'Copilot walks you through the GitHub Education application.',
+  fields: [
+    { k: 'school', label: 'Your school', type: 'text', ph: 'North Carolina State University' },
+    { k: 'email', label: 'Your school email', help: 'Only used on GitHub\'s own form.', type: 'text', ph: 'my NC State email' }
+  ],
+  tpl: `Help me apply for the GitHub Student Developer Pack so I get Copilot Pro for free.
+School: {{school}}
+School email: {{email}}
+
+Open the GitHub Education page in the browser and guide me through the application one step at a time. Wait for me to say "done" after each step. Tell me what proof of enrollment GitHub may ask for, how long approval usually takes, and how I'll know it worked.` },
+
+vibe: {
+  title: 'Add Vibe Annotations to Chrome',
+  note: 'A Chrome extension for leaving visual notes on your app.',
+  fields: [],
+  tpl: `Help me install the Vibe Annotations extension in Google Chrome:
+https://chromewebstore.google.com/detail/vibe-annotations-visual-f/gkofobaeeepjopdpahbicefmljcmpeof
+
+If Chrome isn't installed, help me install it first. Tell me exactly what to click to add the extension and pin it to the toolbar, then wait for me to say "done".
+Then explain how I'll use it: open my localhost link, click something, write a note, and copy all my notes to paste back to you.` },
+
+taste: {
+  title: 'Write Howl\'s taste profile',
+  note: 'Uses the taste-profile skill.',
+  fields: [
+    { k: 'refs', label: 'Your references', help: 'One per line: a name or link, then what you like about it.', type: 'textarea', ph: 'Spotify Wrapped — huge type, bold color blocks\nA Raleigh gig poster — gritty red and black' },
+    { k: 'feel', label: 'Three words for how Howl should feel', type: 'text', ph: 'loud, warm, quick' },
+    { k: 'like', label: 'Howl is like ___ meets ___', type: 'text', ph: 'a gig poster meets a group chat' },
+    { k: 'never', label: 'Howl should never look like…', type: 'text', ph: 'a bank app' }
+  ],
+  tpl: `Use the taste-profile skill to write a taste profile for Howl.
+
+About Howl: a social app for NC State students. Short posts about campus life: the Brickyard, Hunt Library, Talley, game days.
+
+My references:
+{{refs:list}}
+Howl should feel: {{feel}}
+Howl is like {{like}}.
+Howl should never look like: {{never}}
+
+When it's saved, summarize the direction in one sentence and remind me to commit.` },
+
+explore: {
+  title: 'Explore Howl\'s post card',
+  note: 'Uses the explore-variants skill.',
+  fields: [
+    { k: 'component', label: 'Which part?', type: 'select', options: ['a post in the feed (the post card)', 'the top of the feed (header)', 'the box for writing a post'] },
+    { k: 'axis', label: 'What should differ between versions?', type: 'select', options: ['density: how much fits on screen', 'contrast: quiet versus loud', 'shape: sharp versus round', 'voice: how the words sound'] },
+    { k: 'keep', label: 'Anything that must stay the same? (optional)', type: 'text', ph: 'the red accent' }
+  ],
+  tpl: `Use the explore-variants skill on Howl.
+
+Explore: {{component}}
+What should differ: {{axis}}
+Keep the same: {{keep|nothing in particular}}
+
+Use the sample posts in src/data/posts.json as the content, and give me the link to the page with the versions.` },
+
+annotate: {
+  title: 'Apply my visual feedback',
+  note: 'Paste what you copied from Vibe Annotations.',
+  fields: [
+    { k: 'notes', label: 'Your annotations', help: 'Replace the example with what you copied from Vibe Annotations.', type: 'textarea', ph: 'Post card B, name: too small and too light, make it bolder\nFeed header: too much space above the Howl logo\nHowl button: the red is too loud here, use it only when a post has howls' }
+  ],
+  tpl: `Here's my visual feedback from Vibe Annotations:
+
+{{notes}}
+
+Apply each note one at a time. Use my installed skills (spacing, content-clarity, color-contrast and ai-slop-remover) where they apply, and stay within the design system tokens. After each note, tell me in one line what you changed. If a note is unclear, ask me before changing anything.` },
+
+system: {
+  title: 'Build Howl\'s design system',
+  note: 'Uses the design-system-builder and color-contrast skills.',
+  fields: [
+    { k: 'accent', label: 'Accent color', type: 'color', def: '#c11f2e' },
+    { k: 'tint', label: 'Gray tint', type: 'select', options: ['warm (leans toward red and brown)', 'cool (leans toward blue)', 'neutral'] },
+    { k: 'fonts', label: 'Font pairing (free on Google Fonts)', type: 'select', options: ['Archivo Expanded for headlines + Archivo for text (sporty)', 'Bricolage Grotesque + Figtree (friendly)', 'Fraunces + Work Sans (editorial)', 'Unbounded + Manrope (bold and techy)', 'Instrument Serif + Instrument Sans (calm and artsy)'] },
+    { k: 'radius', label: 'Corners', type: 'select', options: ['sharp: 2–4px', 'soft: 8–12px', 'round: 16–24px with pill buttons'] },
+    { k: 'density', label: 'Density', type: 'select', options: ['compact: fits more posts on screen', 'comfortable: more breathing room'] }
+  ],
+  tpl: `Use the design-system-builder skill to create Howl's design system, following docs/taste-profile.md.
+
+My choices:
+- Accent color: {{accent}}
+- Gray tint: {{tint}}
+- Fonts: {{fonts}}
+- Corners: {{radius}}
+- Density: {{density}}
+
+Then run the color-contrast skill on both light and dark mode and fix anything that fails. Give me the link to the /design-system page.` },
+
+components: {
+  title: 'Build Howl\'s base components',
+  note: 'Uses design-system-builder, content-clarity, spacing and color-contrast.',
+  fields: [
+    { k: 'voice', label: 'Howl\'s voice', type: 'select', options: ['friendly and casual', 'short and direct', 'playful Wolfpack energy, never cringe'] },
+    { k: 'peeve', label: 'One UI thing that annoys you in other apps', type: 'text', ph: 'buttons that just say Submit' }
+  ],
+  tpl: `Build Howl's base components with the design system tokens: Button (primary, secondary, quiet), TextArea, Card, Avatar, Tag (for campus spots) and Tabs.
+
+- Every component shows every state: default, hover, pressed, focused, disabled, and loading where it makes sense.
+- Follow the content-clarity skill. Howl's voice is {{voice}}.
+- Follow the spacing and color-contrast skills.
+- Howl should never do this: {{peeve}}
+
+Add all of them to the /design-system page, in light and dark mode.` },
+
+figma: {
+  title: 'Bring the tokens into Figma',
+  note: 'Your agent guides you through Figma in the browser.',
+  fields: [
+    { k: 'file', label: 'Your Figma file', type: 'text', ph: 'none yet, create a new file called "Howl design system"' }
+  ],
+  tpl: `Help me bring Howl's tokens (tokens/tokens.json) into Figma as variables, with a Light mode and a Dark mode.
+Figma file: {{file}}
+
+Open Figma in the browser. If I'm not logged in, ask me to log in or create a free account (I can use my school email). Guide me one step at a time and wait for me to say "done" before the next step. Explain why the code is the source of truth, and what I'd do to update Figma after changing a token.` },
+
+layout: {
+  title: 'Lay out Howl',
+  note: 'Uses spacing and content-clarity.',
+  fields: [
+    { k: 'nav', label: 'Navigation', type: 'select', options: ['a bottom tab bar, like a phone app', 'a top bar only', 'a bottom tab bar on phones and a side rail on desktop'] },
+    { k: 'feed', label: 'Feed style', type: 'select', options: ['cards with space between them', 'a compact list with dividers', 'photo-first, with big images'] },
+    { k: 'extra', label: 'Anything else on the home screen? (optional)', type: 'text', ph: 'a "happening today" strip' }
+  ],
+  tpl: `Build Howl's app shell and home feed using only the design system components and tokens.
+
+- Navigation: {{nav}}
+- Feed style: {{feed}}
+- Also on the home screen: {{extra|nothing else}}
+- The Howl wordmark, and a clear way to start writing a post
+- Fill the feed with the sample posts from src/data/posts.json. They don't need to work yet.
+- Phone first (375px), then 768px and 1200px. On big screens, keep the feed about 600px wide and centered.
+- An empty state for when there are no posts.
+
+Follow the spacing and content-clarity skills. Layout only: no features yet.` },
+
+polish: {
+  title: 'Remove the slop',
+  note: 'Uses ai-slop-remover, content-clarity and spacing.',
+  fields: [
+    { k: 'known', label: 'Anything you already want gone? (optional)', type: 'text', ph: 'the gradient behind the header' }
+  ],
+  tpl: `Review every Howl screen with the ai-slop-remover, content-clarity and spacing skills.
+I already want this gone: {{known|nothing specific}}
+
+First show me one combined list of problems, with where each one is. Then fix the 5 most important, and tell me what's left.` },
+
+data: {
+  title: 'Give Howl one place for its data',
+  note: 'Paste this once, before building features.',
+  fields: [],
+  tpl: `Set up Howl's data layer so it's easy to switch to a real database later.
+
+1. Create src/lib/data.js as the only place the app reads or writes posts and howls. Components never touch storage directly.
+2. Add a setting called VITE_DATA_SOURCE with two options:
+   - "seed": posts come from src/data/posts.json, and new posts and howls are saved in localStorage
+   - "supabase": we'll add this in Phase 6
+   Default to "seed".
+3. Explain in two sentences, for a designer, why keeping data in one place matters.` },
+
+feature: {
+  title: 'Build a Howl feature',
+  note: 'Use it once per feature, in order.',
+  fields: [
+    { k: 'feature', label: 'Which feature?', type: 'select', options: ['1 · Feed: show posts, newest first, each with name, time, campus spot and howl count', '2 · Compose: write a post (up to 280 characters) with a campus spot, and see it at the top', '3 · Howl: tap to howl at a post, the count goes up, and tapping again undoes it', '4 · Filter: show only posts from one campus spot (Brickyard, Hunt, Talley…)'] },
+    { k: 'twist', label: 'Your twist (optional)', help: 'One detail that makes it yours.', type: 'text', ph: 'the howl count turns red after 10 howls' }
+  ],
+  tpl: `Build this one Howl feature: {{feature}}
+My twist: {{twist|none, keep it simple}}
+
+- Tell me your plan in 3 bullet points first, then build it.
+- Read and write data only through src/lib/data.js.
+- Handle every state: empty, normal, a very long post, a list of 200 posts, and wrong input (empty or too long) with a helpful message.
+- Use the design system, and follow the spacing and content-clarity skills.
+- Check it at phone width and in dark mode.
+- Don't change anything else.
+
+When you're done, give me 3–5 test steps in plain language and suggest a commit message.` },
+
+deploy: {
+  title: 'Put Howl on Vercel',
+  note: 'Creates your Vercel account if you need one, then publishes Howl.',
+  fields: [
+    { k: 'project', label: 'Name for your Vercel project', help: 'It becomes part of your link, for example howl-yourname.vercel.app.', type: 'text', ph: 'howl' }
+  ],
+  tpl: `Help me put Howl on the internet with Vercel. Project name: {{project}}
+
+1. Open vercel.com in the browser. If I don't have an account, have me sign up with "Continue with GitHub" on the free Hobby plan. Wait for me to say "done".
+2. Guide me to import my Howl repository from GitHub (Add New → Project → Import), using the project name above, and deploy it with the default settings.
+3. Give me my live link and check that it loads.
+4. Explain in two sentences what Vercel does, and that every time I sync to GitHub from now on, Vercel publishes the new version automatically.
+
+Guide me one step at a time and wait for "done" after anything I have to click.` },
+
+database: {
+  title: 'Connect a real database (Supabase)',
+  note: 'Your agent guides you through Vercel and Supabase in the browser.',
+  fields: [
+    { k: 'allow', label: 'What can visitors do without logging in?', type: 'select', options: ['read posts, write posts and howl', 'read posts and howl only'] },
+    { k: 'limit', label: 'Longest post (characters)', type: 'select', options: ['280', '140', '500'] }
+  ],
+  tpl: `Help me connect Howl to a real Supabase database. I don't use the terminal: run any commands yourself, and use your Chrome skill to guide me through each website step one at a time, waiting for me to say "done".
+
+1. In my Vercel project, open Storage and create a Supabase database on the free plan, connected to both Production and Preview. If Supabase asks me to sign up, log in or accept terms, tell me what to click and wait.
+2. Explain in two sentences what a database is and why Howl needs one now.
+3. Create the tables Howl needs (posts and howls). Write the SQL and tell me exactly where to paste it in Supabase, or run it yourself if you can.
+4. Security, since there's no login yet: turn on Row Level Security. Visitors can {{allow}}. Nobody can edit or delete from the app. Posts are limited to {{limit}} characters in the database itself.
+5. Load the sample posts from src/data/posts.json into the database.
+6. Add the "supabase" option to src/lib/data.js. Use only the public anon key in the browser, never the service role key, and make sure the environment variable names work with our build tool.
+7. Test it locally with VITE_DATA_SOURCE=supabase, then show me where to see my posts in the Supabase table editor.` },
+
+preview: {
+  title: 'Set up the hidden preview link',
+  note: 'A private link that always shows seeded sample data.',
+  fields: [
+    { k: 'share', label: 'Who can open the preview link?', type: 'select', options: ['anyone I send the link to (turn off Vercel\'s preview login)', 'only me, logged in to Vercel (keep the login)'] }
+  ],
+  tpl: `Set up a hidden preview of Howl that always uses seeded sample data, never the real database.
+
+1. Create a branch called preview and push it to GitHub.
+2. In Vercel → Settings → Environment Variables: VITE_DATA_SOURCE = "supabase" for Production, and "seed" for Preview. Then redeploy both.
+3. Who can open the preview: {{share}}. Change Vercel's Deployment Protection setting to match.
+4. Give me the preview branch link (it stays the same every time I push to preview) and my live link.
+5. Explain in two sentences when I'd use each link.
+
+Use your Chrome skill to guide me through Vercel one step at a time, and wait for me to say "done".` },
+
+launch: {
+  title: 'Launch Howl',
+  note: 'Uses ship-check.',
+  fields: [
+    { k: 'tagline', label: 'One-line description for link previews', type: 'text', ph: 'What\'s happening at NC State, right now.' },
+    { k: 'maker', label: 'Your name for the footer (optional)', type: 'text', ph: 'Alex' }
+  ],
+  tpl: `Run the ship-check skill on Howl and fix anything that fails, for both Production and Preview.
+
+- Page title: Howl
+- Description and link preview text: {{tagline}}
+- Footer credit: {{maker|leave it out}}
+
+When everything passes, commit and sync to GitHub, then give me my live link and tell me how to check that posts are being saved in Supabase.` }
+};
+
+/* ===================== APP ===================== */
+(function () {
+  const KEY = 'howl-lesson-v2';
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
+  const state = Object.assign({ fields: {}, done: {}, checks: {}, last: null, lastPhase: null }, load());
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const toast = document.getElementById('toast');
+  let tt;
+  const say = m => { toast.textContent = m; toast.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => toast.classList.remove('show'), 2000); };
+
+  const installHeader = name =>
+    'Add this skill to my project. Save everything between SKILL START and SKILL END, exactly as written, to .github/skills/' + name + '/SKILL.md (create the folders if needed, and replace the file if it already exists).\n' +
+    'Don\'t run the skill and don\'t change anything else. Just confirm it\'s saved and tell me in one sentence when you\'ll use it.\n\n';
+
+  /* ---- skill pages ---- */
+  document.querySelectorAll('[data-skill-page]').forEach(sec => {
+    const id = sec.dataset.skillPage, s = SKILLS[id];
+    sec.innerHTML =
+      '<p class="kicker">Skill · works on any project · used in ' + esc(s.used) + '</p>' +
+      '<h1>' + esc(id) + '</h1><p class="lead">' + esc(s.lead) + '</p>' +
+      '<div class="callout"><span class="label">How it works</span>' + esc(s.how) + '</div>' +
+      '<h2>Install it</h2><div class="prose"><ol><li>Fill in <em>Make it yours</em>. Every field has a sensible default, so you can skip any of them.</li><li>Read the preview. The first lines tell Copilot to <strong>only save</strong> the skill, not run it.</li><li>Click <strong>Copy</strong> and paste into Copilot Chat. When it confirms, click <strong>Mark as installed</strong>.</li></ol></div>' +
+      '<div data-skill-card="' + id + '"></div>' +
+      '<p class="src">Distilled from: ' + esc(s.sources) + '.</p>';
+  });
+
+  /* ---- card rendering (skills + prompts) ---- */
+  const PH = /\{\{(\w+)(?::(\w+))?(?:\|([^}]*))?\}\}/g;
+  const fmt = (val, mode) => {
+    const lines = val.split('\n').map(l => l.trim()).filter(Boolean);
+    if (mode === 'list') return lines.map(l => '- ' + l.replace(/^[-•]\s*/, '')).join('\n');
+    if (mode === 'numbered') return lines.map((l, i) => (i + 1) + '. ' + l).join('\n');
+    return val.trim();
+  };
+  const isOpt = f => f.opt || /\(optional\)/.test(f.label);
+  const example = f => f.type === 'color' ? f.def : f.type === 'select' ? f.options[0] : (isOpt(f) ? '' : (f.ph || ''));
+  function fill(tpl, key, defs) {
+    const vals = state.fields[key] || {};
+    let text = '', html = '', last = 0, examples = 0, m;
+    PH.lastIndex = 0;
+    while ((m = PH.exec(tpl))) {
+      const [all, k, mode, def] = m;
+      const before = tpl.slice(last, m.index); text += before; html += esc(before);
+      const f = defs.find(x => x.k === k) || { k, label: k };
+      const own = (vals[k] || '').trim();
+      const ex = example(f).trim();
+      const v = own || ex;
+      if (v) {
+        const o = fmt(v, mode); text += o;
+        const mine = own && own !== ex;
+        if (!mine) examples++;
+        html += '<mark class="' + (mine ? 'fill' : 'ex') + '">' + esc(o) + '</mark>';
+      } else if (def !== undefined) { text += def; html += esc(def); }
+      else { const o = '[ASK ME: ' + f.label.replace(/\s*\(optional\)/, '') + ']'; text += o; html += '<mark class="ask">' + esc(o) + '</mark>'; }
+      last = m.index + all.length;
+    }
+    text += tpl.slice(last); html += esc(tpl.slice(last));
+    return { text, html, examples };
+  }
+
+  function fieldHTML(f, uid) {
+    const id = uid + '-' + f.k;
+    const help = f.help ? '<small>' + esc(f.help) + '</small>' : '';
+    let ctl;
+    if (f.type === 'select') ctl = '<select id="' + id + '" data-field="' + f.k + '">' + f.options.map(o => '<option>' + esc(o) + '</option>').join('') + '</select>';
+    else if (f.type === 'textarea') ctl = '<textarea id="' + id + '" data-field="' + f.k + '" placeholder="' + esc(f.ph || '') + '"></textarea>';
+    else if (f.type === 'color') ctl = '<div class="color-row"><input type="color" data-field="' + f.k + '" value="' + f.def + '" aria-label="' + esc(f.label) + ' picker"><input type="text" id="' + id + '" data-field="' + f.k + '" value="' + f.def + '"></div>';
+    else ctl = '<input type="text" id="' + id + '" data-field="' + f.k + '" placeholder="' + esc(f.ph || '') + '">';
+    return '<div class="field"><label for="' + id + '"><span>' + esc(f.label) + '</span></label>' + help + ctl + '</div>';
+  }
+
+  let uidN = 0;
+  function mountCard(host, kind, id) {
+    const def = kind === 'skill' ? SKILLS[id] : PROMPTS[id];
+    const key = kind + ':' + id;
+    const uid = 'f' + (uidN++);
+    state.fields[key] = state.fields[key] || {};
+    def.fields.forEach(f => { if (f.type === 'color' && !state.fields[key][f.k]) state.fields[key][f.k] = f.def; });
+
+    let headHTML = '';
+    if (kind === 'prompt') headHTML = '<p class="card-title">' + esc(def.title) + '</p><p class="card-note">' + esc(def.note) + '</p>';
+    const formTitle = kind === 'skill' ? 'Make it yours' : 'Fill in';
+    const fieldsHTML = def.fields.length
+      ? '<p class="legend"><mark class="ex">Example</mark> values are already filled in. Change any field to make it <mark class="fill">yours</mark>, or copy it as is to follow along.</p>' + def.fields.map(f => fieldHTML(f, uid)).join('') + '<button class="btn small" type="button" data-reset>Reset to examples</button>'
+      : '<p class="empty-note">Nothing to fill in. Copy it as is.</p>';
+    host.innerHTML = headHTML +
+      '<div class="skill"><div class="skill-form"><h3>' + formTitle + '</h3>' + fieldsHTML + '</div>' +
+      '<div class="skill-out"><div class="out-head"><span><span class="kind">' + (kind === 'skill' ? 'Skill install' : 'Prompt') + '</span><span class="dest"></span></span><span class="status"></span></div>' +
+      '<pre class="preview" tabindex="0"></pre>' +
+      '<div class="copy-row"><button class="btn primary" type="button" data-copy>' + (kind === 'skill' ? 'Copy skill install' : 'Copy prompt') + '</button></div></div></div>';
+
+    const pre = host.querySelector('pre'), status = host.querySelector('.status'), dest = host.querySelector('.dest');
+    const inputs = host.querySelectorAll('[data-field]');
+    const exFor = k => example(def.fields.find(f => f.k === k));
+    const setVals = () => inputs.forEach(el => { const v = state.fields[key][el.dataset.field]; el.value = (v !== undefined && v !== '') ? v : exFor(el.dataset.field); });
+    setVals();
+    const resetBtn = host.querySelector('[data-reset]');
+    if (resetBtn) resetBtn.addEventListener('click', () => { state.fields[key] = {}; save(); setVals(); update(); document.querySelectorAll('[data-card-key="' + key + '"]').forEach(o => { if (o !== host) o.dispatchEvent(new Event('sync')); }); });
+
+    const skillName = () => id === 'my-skill' ? ((state.fields[key].name || '').trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '') || 'my-skill') : id;
+    function build() {
+      const r = fill(def.tpl, key, def.fields);
+      if (kind === 'skill') {
+        const h = installHeader(skillName());
+        r.text = h + '=== SKILL START ===\n' + r.text + '=== SKILL END ===';
+        r.html = '<span class="hdr">' + esc(h) + '</span><span class="sep">=== SKILL START ===</span>\n' + r.html + '<span class="sep">=== SKILL END ===</span>';
+      }
+      return r;
+    }
+    function update(src) {
+      if (src) {
+        state.fields[key][src.dataset.field] = src.value;
+        inputs.forEach(el => { if (el !== src && el.dataset.field === src.dataset.field) el.value = src.value; });
+        save();
+        document.querySelectorAll('[data-card-key="' + key + '"]').forEach(other => { if (other !== host) other.dispatchEvent(new Event('sync')); });
+      }
+      const r = build();
+      pre.innerHTML = r.html;
+      dest.textContent = kind === 'skill' ? '→ .github/skills/' + skillName() + '/SKILL.md' : '→ Copilot Chat, Agent mode';
+      status.textContent = !def.fields.length ? 'Ready' : r.examples ? 'Ready · ' + r.examples + ' example' + (r.examples > 1 ? 's' : '') : 'Ready · all yours';
+      status.classList.add('ready');
+    }
+    host.dataset.cardKey = key;
+    host.addEventListener('sync', () => { setVals(); update(); });
+    inputs.forEach(el => el.addEventListener('input', () => update(el)));
+    host.querySelector('[data-copy]').addEventListener('click', () => {
+      const r = build();
+      copy(r.text, kind === 'skill' ? 'Copied. Paste it into Copilot Chat to install it.' : 'Copied. Paste it into Copilot Chat.');
+    });
+    update();
+  }
+  document.querySelectorAll('[data-skill-card]').forEach(h => mountCard(h, 'skill', h.dataset.skillCard));
+  document.querySelectorAll('[data-prompt]').forEach(h => mountCard(h, 'prompt', h.dataset.prompt));
+
+  function copy(text, msg) {
+    const fallback = () => {
+      const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+      ta.remove(); say(ok ? msg : 'Copy failed. Select the text in the preview and copy it.');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => say(msg), fallback); else fallback();
+  }
+
+  /* ---- navigation ---- */
+  const steps = [...document.querySelectorAll('.step')];
+  const nav = document.getElementById('nav'), foot = document.getElementById('stepFoot');
+  let group = null;
+  steps.forEach(s => {
+    if (s.dataset.group !== group) { group = s.dataset.group; const g = document.createElement('div'); g.className = 'nav-group'; g.textContent = group; nav.appendChild(g); }
+    const a = document.createElement('a'); a.href = '#' + s.id; a.dataset.id = s.id;
+    const isSkill = !!s.dataset.skillPage;
+    a.innerHTML = '<span class="dot" aria-hidden="true">✓</span><span>' + esc(s.dataset.label) + '</span>' + (isSkill ? '<span class="chip">skill</span>' : '');
+    nav.appendChild(a);
+  });
+  document.querySelectorAll('[data-skills]').forEach(box => {
+    box.innerHTML = box.dataset.skills.split(' ').map(id => '<a class="chip-link" data-chip="' + id + '" href="#skill-' + id + '"><span class="tick" aria-hidden="true">✓</span>' + esc(id) + '</a>').join('');
+  });
+
+  function refresh() {
+    const n = steps.filter(s => state.done[s.id]).length;
+    document.getElementById('progressFill').style.width = (n / steps.length * 100) + '%';
+    document.getElementById('progressText').textContent = n + ' of ' + steps.length + ' done';
+    nav.querySelectorAll('a').forEach(a => a.classList.toggle('is-done', !!state.done[a.dataset.id]));
+    document.querySelectorAll('[data-chip]').forEach(c => { const d = !!state.done['skill-' + c.dataset.chip]; c.classList.toggle('is-done', d); c.title = d ? 'Installed' : 'Not installed yet'; });
+  }
+
+  let cur = 0;
+  function show(id, focus) {
+    const i = Math.max(0, steps.findIndex(s => s.id === id)); cur = i;
+    const s = steps[i];
+    steps.forEach((x, j) => x.classList.toggle('is-active', j === i));
+    s.after(foot);
+    nav.querySelectorAll('a').forEach(a => { if (a.dataset.id === s.id) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    if (s.hasAttribute('data-phase')) state.lastPhase = s.id;
+    const isSkill = !!s.dataset.skillPage;
+    const phaseBtn = document.getElementById('phaseBtn');
+    const ph = state.lastPhase && steps.find(x => x.id === state.lastPhase);
+    phaseBtn.hidden = !(isSkill && ph);
+    if (ph) phaseBtn.textContent = '← Back to ' + ph.dataset.label;
+    document.getElementById('prevBtn').disabled = i === 0;
+    const next = document.getElementById('nextBtn');
+    next.hidden = i === steps.length - 1;
+    if (!next.hidden) next.textContent = 'Next: ' + steps[i + 1].dataset.label + ' →';
+    const done = document.getElementById('doneBtn'), d = !!state.done[s.id];
+    done.setAttribute('aria-pressed', d ? 'true' : 'false');
+    done.textContent = isSkill ? (d ? 'Installed ✓' : 'Mark as installed') : (d ? 'Done ✓' : 'Mark as done');
+    state.last = s.id; save();
+    if (location.hash !== '#' + s.id) history.replaceState(null, '', '#' + s.id);
+    closeMenu();
+    if (focus) { window.scrollTo(0, 0); const h = s.querySelector('h1'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } }
+  }
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href^="#"]'); if (!a) return;
+    const id = a.getAttribute('href').slice(1);
+    if (steps.some(s => s.id === id)) { e.preventDefault(); show(id, true); }
+  });
+  document.getElementById('prevBtn').onclick = () => show(steps[Math.max(0, cur - 1)].id, true);
+  document.getElementById('nextBtn').onclick = () => show(steps[Math.min(steps.length - 1, cur + 1)].id, true);
+  document.getElementById('phaseBtn').onclick = () => show(state.lastPhase, true);
+  document.getElementById('doneBtn').onclick = () => {
+    const id = steps[cur].id; state.done[id] = !state.done[id]; save(); refresh(); show(id, false);
+    if (state.done[id]) say(steps[cur].dataset.skillPage ? 'Installed. Your agent can use it on any project now.' : 'Nice. Step done.');
+  };
+
+  document.querySelectorAll('input[type="checkbox"][data-key]').forEach(cb => {
+    cb.checked = !!state.checks[cb.dataset.key];
+    cb.addEventListener('change', () => { state.checks[cb.dataset.key] = cb.checked; save(); });
+  });
+
+  const root = document.documentElement, themeBtn = document.getElementById('themeBtn');
+  const isDark = () => (root.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark';
+  const syncTheme = () => { themeBtn.textContent = isDark() ? 'Light mode' : 'Dark mode'; };
+  try { const t = localStorage.getItem(KEY + '-theme'); if (t) root.dataset.theme = t; } catch (e) {}
+  themeBtn.onclick = () => { root.dataset.theme = isDark() ? 'light' : 'dark'; try { localStorage.setItem(KEY + '-theme', root.dataset.theme); } catch (e) {} syncTheme(); };
+  syncTheme();
+
+  const resetBtn = document.getElementById('resetBtn'); let armed = false;
+  resetBtn.onclick = () => {
+    if (!armed) { armed = true; resetBtn.textContent = 'Click again to clear'; setTimeout(() => { armed = false; resetBtn.textContent = 'Clear my answers'; }, 3000); return; }
+    try { localStorage.removeItem(KEY); } catch (e) {} location.reload();
+  };
+
+  const side = document.getElementById('side'), menuBtn = document.getElementById('menuBtn'); let scrim = null;
+  function closeMenu() { side.classList.remove('open'); menuBtn.setAttribute('aria-expanded', 'false'); if (scrim) { scrim.remove(); scrim = null; } }
+  menuBtn.onclick = () => { side.classList.add('open'); menuBtn.setAttribute('aria-expanded', 'true'); scrim = document.createElement('div'); scrim.className = 'scrim'; scrim.onclick = closeMenu; document.body.appendChild(scrim); };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+
+  refresh();
+  const start = location.hash.slice(1);
+  show(steps.some(s => s.id === start) ? start : (state.last || 'welcome'), false);
+  window.addEventListener('hashchange', () => { const id = location.hash.slice(1); if (steps.some(s => s.id === id)) show(id, true); });
+})();
+</script>
+</body>
+</html>

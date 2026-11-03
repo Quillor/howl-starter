@@ -1,0 +1,137 @@
+[
+  {
+    "id": "p01",
+    "author": "Maya Ortiz",
+    "handle": "mayao",
+    "spot": "Hunt Library",
+    "text": "Fourth floor of Hunt is silent and somehow still has three open window seats. Get here before noon.",
+    "createdAt": "2026-11-02T14:05:00Z",
+    "howls": 24
+  },
+  {
+    "id": "p02",
+    "author": "Jordan Lee",
+    "handle": "jlee",
+    "spot": "Talley Student Union",
+    "text": "Howling Cow has pumpkin spice today. You know what to do.",
+    "createdAt": "2026-11-02T13:48:00Z",
+    "howls": 61
+  },
+  {
+    "id": "p03",
+    "author": "Sam Patel",
+    "handle": "sampatel",
+    "spot": "Brickyard",
+    "text": "Someone brought a golden retriever to the Brickyard and there is now a line to pet it.",
+    "createdAt": "2026-11-02T13:30:00Z",
+    "howls": 88
+  },
+  {
+    "id": "p04",
+    "author": "Ava Brooks",
+    "handle": "avab",
+    "spot": "Free Expression Tunnel",
+    "text": "The tunnel got repainted overnight. Whoever did the giant wolf with sunglasses: respect.",
+    "createdAt": "2026-11-02T12:55:00Z",
+    "howls": 47
+  },
+  {
+    "id": "p05",
+    "author": "Chris Nguyen",
+    "handle": "cnguyen",
+    "spot": "Carmichael Gym",
+    "text": "Pickup basketball at 5. Need two more.",
+    "createdAt": "2026-11-02T12:20:00Z",
+    "howls": 9
+  },
+  {
+    "id": "p06",
+    "author": "Lena Fischer",
+    "handle": "lenaf",
+    "spot": "D.H. Hill Library",
+    "text": "Group study rooms on the second floor are all booked until 8. The Makerspace is open though.",
+    "createdAt": "2026-11-02T11:42:00Z",
+    "howls": 15
+  },
+  {
+    "id": "p07",
+    "author": "Marcus Hill",
+    "handle": "marcush",
+    "spot": "Wolfline",
+    "text": "Route 3 is running about 10 minutes late. Plan accordingly.",
+    "createdAt": "2026-11-02T11:10:00Z",
+    "howls": 32
+  },
+  {
+    "id": "p08",
+    "author": "Priya Raman",
+    "handle": "priyar",
+    "spot": "Centennial Campus",
+    "text": "Lake Raleigh at sunset after a long studio day. Worth the walk.",
+    "createdAt": "2026-11-02T10:35:00Z",
+    "howls": 53
+  },
+  {
+    "id": "p09",
+    "author": "Tyler Grant",
+    "handle": "tgrant",
+    "spot": "Carter-Finley Stadium",
+    "text": "Tailgate lot is already filling up for Saturday. Red and white, everybody.",
+    "createdAt": "2026-11-02T09:58:00Z",
+    "howls": 120
+  },
+  {
+    "id": "p10",
+    "author": "Nora Kim",
+    "handle": "norak",
+    "spot": "Brickyard",
+    "text": "Free coffee from the design club booth until it runs out.",
+    "createdAt": "2026-11-02T09:20:00Z",
+    "howls": 36
+  },
+  {
+    "id": "p11",
+    "author": "Diego Alvarez",
+    "handle": "diegoa",
+    "spot": "Talley Student Union",
+    "text": "Lost a navy NC State hoodie in the Talley food court around lunch. If you find it, it has a coffee stain on the left sleeve and it's my favorite one, please. I've had it since freshman orientation and it has been through two moves, one flood, a whole semester of 8am classes in Harrelson and more late nights at Hunt than I want to admit. It's not much to look at anymore but it's mine. I'll trade a large Howling Cow cone for its safe return, no questions asked.",
+    "createdAt": "2026-11-02T08:44:00Z",
+    "howls": 19
+  },
+  {
+    "id": "p12",
+    "author": "Grace Owens",
+    "handle": "graceo",
+    "spot": "Hunt Library",
+    "text": "The robot book retrieval thing is running and it never gets old.",
+    "createdAt": "2026-11-01T21:15:00Z",
+    "howls": 27
+  },
+  {
+    "id": "p13",
+    "author": "Ben Carter",
+    "handle": "benc",
+    "spot": "Belltower",
+    "text": "The Belltower is lit red tonight. Big win.",
+    "createdAt": "2026-11-01T20:02:00Z",
+    "howls": 142
+  },
+  {
+    "id": "p14",
+    "author": "Ivy Thompson",
+    "handle": "ivyt",
+    "spot": null,
+    "text": "Anyone else's 8am just get cancelled or is it only mine?",
+    "createdAt": "2026-11-01T18:30:00Z",
+    "howls": 12
+  },
+  {
+    "id": "p15",
+    "author": "Omar Haddad",
+    "handle": "omarh",
+    "spot": "Reynolds Coliseum",
+    "text": "Volleyball game tonight, free entry with your student ID.",
+    "createdAt": "2026-11-01T16:45:00Z",
+    "howls": 22
+  }
+]

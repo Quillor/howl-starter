@@ -1,0 +1,39 @@
+/* Starter tokens: deliberately plain. You replace these in Phase 3 with the design-system-builder skill. */
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f5f5f4;
+  --color-border: #e2e2e0;
+  --color-text: #1c1c1b;
+  --color-text-muted: #636360;
+  --color-accent: #1c1c1b;
+  --color-on-accent: #ffffff;
+
+  --font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --space-2: 8px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-2: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg: #161615;
+    --color-surface: #222221;
+    --color-border: #353533;
+    --color-text: #f2f2f0;
+    --color-text-muted: #a3a3a0;
+    --color-accent: #f2f2f0;
+    --color-on-accent: #161615;
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #161615;
+  --color-surface: #222221;
+  --color-border: #353533;
+  --color-text: #f2f2f0;
+  --color-text-muted: #a3a3a0;
+  --color-accent: #f2f2f0;
+  --color-on-accent: #161615;
+}
